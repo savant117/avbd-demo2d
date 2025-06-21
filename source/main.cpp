@@ -19,7 +19,12 @@
 #include <windows.h>
 #endif
 
+#ifdef TARGET_OS_MAC
+#include <OpenGL/GL.h>
+#else
 #include <GL/gl.h>
+#endif
+
 #include <SDL2/SDL.h>
 #include <imgui.h>
 #include <backends/imgui_impl_sdl2.h>

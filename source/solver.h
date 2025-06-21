@@ -17,7 +17,11 @@
 #include <windows.h>
 #endif
 
-#include <gl/GL.h>
+#ifdef TARGET_OS_MAC
+#include <OpenGL/GL.h>
+#else
+#include <GL/gl.h>
+#endif
 
 #include "maths.h"
 
