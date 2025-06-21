@@ -61,8 +61,8 @@ void ui()
     // Create an ImGui window
     ImGui::Begin("Controls");
     ImGui::Text("Move Cam: W,A,S,D / Middle Mouse");
-	ImGui::Text("Zoom Cam: Q,E / Mouse Wheel");
-	ImGui::Text("Make Box: Right Mouse");
+    ImGui::Text("Zoom Cam: Q,E / Mouse Wheel");
+    ImGui::Text("Make Box: Right Mouse");
     ImGui::Text("Drag Box: Left Mouse");
 
     ImGui::Spacing();
@@ -166,7 +166,7 @@ void mainLoop()
     SDL_Event event;
     while (SDL_PollEvent(&event))
     {
-		ImGui_ImplSDL2_ProcessEvent(&event); // Pass events to ImGui
+        ImGui_ImplSDL2_ProcessEvent(&event); // Pass events to ImGui
 
         if (event.type == SDL_KEYDOWN)
         {
@@ -179,11 +179,11 @@ void mainLoop()
             }
             
             if (event.key.keysym.sym == SDLK_ESCAPE)
-			{
+            {
                 #ifndef __EMSCRIPTEN__
                 Running = 0;
                 #endif
-			}
+            }
         }
         else if (event.type == SDL_QUIT)
         { 
@@ -194,7 +194,7 @@ void mainLoop()
     }
 
     int w, h;
-	SDL_GetWindowSize(Window, &w, &h);
+    SDL_GetWindowSize(Window, &w, &h);
 
     glEnable(GL_LINE_SMOOTH);
     glLineWidth(2.0f);
@@ -267,11 +267,11 @@ int main(int argc, char* argv[])
         SDL_Quit();
         return -1;
     }
-	
-	SDL_GL_MakeCurrent(Window, Context);
+    
+    SDL_GL_MakeCurrent(Window, Context);
     SDL_GL_SetSwapInterval(1); // Enable vsync
-	
-	// Setup Dear ImGui context
+    
+    // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
@@ -285,7 +285,7 @@ int main(int argc, char* argv[])
     ImGui_ImplOpenGL3_Init("#version 100"); // GLSL version for OpenGL ES 2.0
 
     // Load scene
-	scenes[currScene](solver);
+    scenes[currScene](solver);
 
     #ifdef __EMSCRIPTEN__
     // Use Emscripten's main loop for the web
