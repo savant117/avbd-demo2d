@@ -58,7 +58,7 @@ float boxDensity = 1.0f;
 
 void ui()
 {
-    // Create an ImGui window
+    // Draw the ImGui UI
     ImGui::Begin("Controls");
     ImGui::Text("Move Cam: W,A,S,D / Middle Mouse");
     ImGui::Text("Zoom Cam: Q,E / Mouse Wheel");
@@ -115,9 +115,11 @@ void input()
 {
     auto& io = ImGui::GetIO();
 
+    // Convert mouse position to world coordinates
     float2 mousePos = camPos + (float2{ io.MousePos.x, io.DisplaySize.y - io.MousePos.y } -
         float2{ io.DisplaySize.x, io.DisplaySize.y } *0.5f) / camZoom;
 
+    // Camera keyboard controls
     if (ImGui::IsKeyDown(ImGuiKey_D))
         camPos.x += 10 / camZoom;
     if (ImGui::IsKeyDown(ImGuiKey_A))
@@ -131,11 +133,12 @@ void input()
     if (ImGui::IsKeyDown(ImGuiKey_Q))
         camZoom /= 1.025f;
 
+    // Camera mouse controls
     if (ImGui::IsMouseDown(ImGuiMouseButton_Middle))
         camPos -= float2{ io.MouseDelta.x, -io.MouseDelta.y } / camZoom;
-
     camZoom *= powf(1.1f, io.MouseWheel);
 
+    // Draw box
     if (io.MouseDown[ImGuiMouseButton_Left])
     {
         if (!drag)
@@ -154,6 +157,7 @@ void input()
         drag = 0;
     }
 
+    // Create box
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
     {
         new Rigid(solver, boxSize, boxDensity, boxFriction, float3{ mousePos.x, mousePos.y, 0.0f },
@@ -163,16 +167,16 @@ void input()
 
 void mainLoop()
 {
+    // Event loop
     SDL_Event event;
     while (SDL_PollEvent(&event))
     {
-        ImGui_ImplSDL2_ProcessEvent(&event); // Pass events to ImGui
+        ImGui_ImplSDL2_ProcessEvent(&event);
 
         if (event.type == SDL_KEYDOWN)
         {
             if (event.key.keysym.sym == SDLK_RETURN && (event.key.keysym.mod & KMOD_ALT))
             {
-                // Toggle fullscreen mode
                 FullScreen = !FullScreen;
                 Uint32 fullscreenFlag = FullScreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0;
                 SDL_SetWindowFullscreen(Window, fullscreenFlag);
@@ -193,6 +197,7 @@ void mainLoop()
         }
     }
 
+    // Setup GL
     int w, h;
     SDL_GetWindowSize(Window, &w, &h);
 
@@ -211,17 +216,19 @@ void mainLoop()
     glDisable(GL_CULL_FACE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // Start a new ImGui frame
+    // ImGUI setup
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
 
     input();
     ui();
+
+    // Step solver and draw it
     solver->step();
     solver->draw();
 
-    // Render ImGui
+    // ImGUI rendering
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 

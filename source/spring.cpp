@@ -21,11 +21,13 @@ Spring::Spring(Solver* solver, Rigid* bodyA, Rigid* bodyB, float2 rA, float2 rB,
 
 void Spring::computeConstraint(float alpha)
 {
+    // Compute constraint function at current state C(x)
     C[0] = length(transform(bodyA->position, rA) - transform(bodyB->position, rB)) - rest;
 }
 
 void Spring::computeDerivatives(Rigid* body)
 {
+    // Compute the first and second derivatives for the desired body
     float2x2 S = { 0, -1, 1, 0 };
     float2x2 I = { 1, 0, 0, 1 };
 

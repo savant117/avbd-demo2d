@@ -27,6 +27,8 @@ Joint::Joint(Solver* solver, Rigid* bodyA, Rigid* bodyB, float2 rA, float2 rB, f
 
 bool Joint::initialize()
 {
+    // Store constraint function at beginnning of timestep C(x-)
+    // Note: if bodyA is null, it is assumed that the joint connects a body to the world space position rA
     C0.xy() = (bodyA ? transform(bodyA->position, rA) : rA) - transform(bodyB->position, rB);
     C0.z = ((bodyA ? bodyA->position.z : 0) - bodyB->position.z - restAngle) * torqueArm;
     return stiffness[0] != 0 || stiffness[1] != 0 || stiffness[2] != 0;
@@ -34,12 +36,14 @@ bool Joint::initialize()
 
 void Joint::computeConstraint(float alpha)
 {
+    // Compute constraint function at current state C(x)
     float3 Cn;
     Cn.xy() = (bodyA ? transform(bodyA->position, rA) : rA) - transform(bodyB->position, rB);
     Cn.z = ((bodyA ? bodyA->position.z : 0) - bodyB->position.z - restAngle) * torqueArm;
 
     for (int i = 0; i < rows(); i++)
     {
+        // Store stabilized constraint function, if a hard constraint (Eq. 18)
         if (isinf(stiffness[i]))
             C[i] = Cn[i] - C0[i] * alpha;
         else
@@ -49,6 +53,7 @@ void Joint::computeConstraint(float alpha)
 
 void Joint::computeDerivatives(Rigid* body)
 {
+    // Compute the first and second derivatives for the desired body
     if (body == bodyA)
     {
         float2 r = rotate(bodyA->position.z, rA);

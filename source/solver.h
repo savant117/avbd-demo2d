@@ -22,8 +22,8 @@
 #include "maths.h"
 
 #define MAX_ROWS 4                    // Most number of rows an individual constraint can have
-#define PENALTY_MIN 1000.0f            // Minimum penalty parameter
-#define PENALTY_MAX 1000000000.0f    // Maximum penalty parameter
+#define PENALTY_MIN 1000.0f           // Minimum penalty parameter
+#define PENALTY_MAX 1000000000.0f     // Maximum penalty parameter
 #define COLLISION_MARGIN 0.01f        // Margin for collision detection to avoid flickering contacts
 #define STICK_THRESH 0.01f            // Position threshold for sticking contacts (ie static friction)
 #define SHOW_CONTACTS true            // Whether to show contacts in the debug draw
@@ -187,12 +187,12 @@ struct Manifold : Force
 // Core solver class which holds all the rigid bodies and forces, and has logic to step the simulation forward in time
 struct Solver
 {
-    float dt;            // Timestep
-    float gravity;        // Gravity
-    int iterations;        // Solver iterations
+    float dt;           // Timestep
+    float gravity;      // Gravity
+    int iterations;     // Solver iterations
 
     float alpha;        // Stabilization parameter
-    float beta;            // Penalty ramping parameter
+    float beta;         // Penalty ramping parameter
     float gamma;        // Warmstarting decay parameter
 
     Rigid* bodies;
