@@ -294,7 +294,11 @@ int main(int argc, char* argv[])
 
     // Setup Platform/Renderer bindings
     ImGui_ImplSDL2_InitForOpenGL(Window, Context);
-    ImGui_ImplOpenGL3_Init("#version 100"); // GLSL version for OpenGL ES 2.0
+    #ifdef __EMSCRIPTEN__
+    ImGui_ImplOpenGL3_Init("#version 300 es");  // WebAssembly
+    #else
+    ImGui_ImplOpenGL3_Init("#version 150");     // Desktop OpenGL
+    #endif
 
     // Load scene
     scenes[currScene](solver);
