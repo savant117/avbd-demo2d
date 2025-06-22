@@ -70,7 +70,7 @@ void Solver::defaultParams()
 
 void Solver::step()
 {
-    // Perform collision detection
+    // Perform broadphase collision detection
     // This is a naive O(n^2) approach, but it is sufficient for small numbers of bodies in this sample.
     for (Rigid* bodyA = bodies; bodyA != 0; bodyA = bodyA->next)
     {
@@ -126,6 +126,7 @@ void Solver::step()
         float3 accel = (body->velocity - body->prevVelocity) / dt;
         float accelExt = accel.y * sign(gravity);
         float accelWeight = clamp(accelExt / abs(gravity), 0.0f, 1.0f);
+        if (!isfinite(accelWeight)) accelWeight = 0.0f;
 
         // Save initial position (x-) and compute warmstarted position (See original VBD paper)
         body->initial = body->position;
@@ -187,7 +188,7 @@ void Solver::step()
                 float lambda = isinf(force->stiffness[i]) ? force->lambda[i] : 0.0f;
 
                 // Update lambda (Eq 11)
-                // Note that we don't include non-conservative forces // (ie motors) in the lambda update, as they are not part of the dual problem.
+                // Note that we don't include non-conservative forces (ie motors) in the lambda update, as they are not part of the dual problem.
                 force->lambda[i] = clamp(force->penalty[i] * force->C[i] + lambda, force->fmin[i], force->fmax[i]);
 
                 // Disable the force if it has exceeded its fracture threshold
