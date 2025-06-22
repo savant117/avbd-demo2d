@@ -184,6 +184,36 @@ static void sceneSoftBody(Solver* solver)
     }
 }
 
+static void sceneJointGrid(Solver* solver)
+{
+    solver->clear();
+
+    const int W = 50, H = 50;
+    const int N = 2;
+
+    Rigid* grid[W][H];
+    for (int x = 0; x < W; x++)
+        for (int y = 0; y < H; y++)
+            grid[x][y] = new Rigid(solver, { 1, 1 }, y == H - 1 && (x == 0 || x == W - 1) ? 0.0f : 1.0f, 0.5f, { (float)x, (float)y, 0.0f });
+
+    for (int x = 1; x < W; x++)
+        for (int y = 0; y < H; y++)
+            new Joint(solver, grid[x - 1][y], grid[x][y], { 0.5f, 0 }, { -0.5f, 0 });
+
+    for (int x = 0; x < W; x++)
+        for (int y = 1; y < H; y++)
+            new Joint(solver, grid[x][y - 1], grid[x][y], { 0, 0.5f }, { 0, -0.5f });
+
+    for (int x = 1; x < W; x++)
+    {
+        for (int y = 1; y < H; y++)
+        {
+            new IgnoreCollision(solver, grid[x - 1][y - 1], grid[x][y]);
+            new IgnoreCollision(solver, grid[x][y - 1], grid[x - 1][y]);
+        }
+    }
+}
+
 static void sceneNet(Solver* solver)
 {
     const int N = 40;
@@ -257,6 +287,7 @@ static void (*scenes[])(Solver*) =
     sceneStackRatio,
     sceneRod,
     sceneSoftBody,
+    sceneJointGrid,
     sceneNet,
     sceneMotor,
     sceneFracture
@@ -277,9 +308,10 @@ static const char* sceneNames[] = {
     "Stack Ratio",
     "Rod",
     "Soft Body",
+    "Joint Grid",
     "Net",
     "Motor",
     "Fracture"
 };
 
-static const int sceneCount = 17;
+static const int sceneCount = 18;
