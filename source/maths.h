@@ -13,6 +13,8 @@
 
 #include <cmath>
 
+using namespace std;
+
 // Math types
 
 struct float2
