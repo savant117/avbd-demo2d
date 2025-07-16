@@ -283,7 +283,7 @@ inline float3x3 outer(float3 a, float3 b)
 
 inline float2 abs(float2 v)
 {
-    return { abs(v.x), abs(v.y) };
+    return { fabsf(v.x), fabsf(v.y) };
 }
 
 inline float2x2 abs(float2x2 a)
