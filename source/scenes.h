@@ -188,7 +188,7 @@ static void sceneJointGrid(Solver* solver)
 {
     solver->clear();
 
-    const int W = 50, H = 50;
+    const int W = 25, H = 25;
     const int N = 2;
 
     Rigid* grid[W][H];

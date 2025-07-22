@@ -199,6 +199,8 @@ struct Solver
     float beta;         // Penalty ramping parameter
     float gamma;        // Warmstarting decay parameter
 
+    bool postStabilize; // Whether to apply post-stabilization to the system
+
     Rigid* bodies;
     Force* forces;
 

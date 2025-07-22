@@ -66,6 +66,10 @@ void Solver::defaultParams()
     // This should always be < 1 so that the penalty values can decrease (unless you use a different
     // penalty parameter strategy which does not require decay).
     gamma = 0.99f;
+
+    // Post stabilization applies an extra iteration to fix positional error.
+    // This removes the need for the alpha parameter, which can make tuning a little easier.
+    postStabilize = false;
 }
 
 void Solver::step()
@@ -98,10 +102,19 @@ void Solver::step()
         {
             for (int i = 0; i < force->rows(); i++)
             {
-                // Warmstart the dual variables and penalty parameters (Eq. 19)
-                // Penalty is safely clamped to a minimum and maximum value
-                force->lambda[i] = force->lambda[i] * alpha * gamma;
-                force->penalty[i] = clamp(force->penalty[i] * gamma, PENALTY_MIN, PENALTY_MAX);
+                if (postStabilize)
+                {
+                    // With post stabilization, we can reuse the full lambda from the previous step,
+                    // and only need to reduce the penalty parameters
+                    force->penalty[i] = clamp(force->penalty[i] * gamma, PENALTY_MIN, PENALTY_MAX);
+                }
+                else
+                {
+                    // Warmstart the dual variables and penalty parameters (Eq. 19)
+                    // Penalty is safely clamped to a minimum and maximum value
+                    force->lambda[i] = force->lambda[i] * alpha * gamma;
+                    force->penalty[i] = clamp(force->penalty[i] * gamma, PENALTY_MIN, PENALTY_MAX);
+                }
 
                 // If it's not a hard constraint, we don't let the penalty exceed the material stiffness
                 force->penalty[i] = min(force->penalty[i], force->stiffness[i]);
@@ -134,8 +147,16 @@ void Solver::step()
     }
 
     // Main solver loop
-    for (int it = 0; it < iterations; it++)
+    // If using post stabilization, we'll use one extra iteration for the stabilization
+    int totalIterations = iterations + (postStabilize ? 1 : 0);
+
+    for (int it = 0; it < totalIterations; it++)
     {
+        // If using post stabilization, either remove all or none of the pre-existing constraint error
+        float currentAlpha = alpha;
+        if (postStabilize)
+            currentAlpha = it < iterations ? 1.0f : 0.0f;
+
         // Primal update
         for (Rigid* body = bodies; body != 0; body = body->next)
         {
@@ -152,7 +173,7 @@ void Solver::step()
             for (Force* force = body->forces; force != 0; force = (force->bodyA == body) ? force->nextA : force->nextB)
             {
                 // Compute constraint and its derivatives
-                force->computeConstraint(alpha);
+                force->computeConstraint(currentAlpha);
                 force->computeDerivatives(body);
 
                 for (int i = 0; i < force->rows(); i++)
@@ -176,38 +197,46 @@ void Solver::step()
             body->position -= solve(lhs, rhs);
         }
 
-        // Dual update
-        for (Force* force = forces; force != 0; force = force->next)
+        // Dual update, only for non stabilized iterations in the case of post stabilization
+        // If doing more than one post stabilization iteration, we can still do a dual update,
+        // but make sure not to persist the penalty or lambda updates done during the stabilization iterations for the next frame.
+        if (it < iterations)
         {
-            // Compute constraint
-            force->computeConstraint(alpha);
-
-            for (int i = 0; i < force->rows(); i++)
+            for (Force* force = forces; force != 0; force = force->next)
             {
-                // Use lambda as 0 if it's not a hard constraint
-                float lambda = isinf(force->stiffness[i]) ? force->lambda[i] : 0.0f;
+                // Compute constraint
+                force->computeConstraint(currentAlpha);
 
-                // Update lambda (Eq 11)
-                // Note that we don't include non-conservative forces (ie motors) in the lambda update, as they are not part of the dual problem.
-                force->lambda[i] = clamp(force->penalty[i] * force->C[i] + lambda, force->fmin[i], force->fmax[i]);
+                for (int i = 0; i < force->rows(); i++)
+                {
+                    // Use lambda as 0 if it's not a hard constraint
+                    float lambda = isinf(force->stiffness[i]) ? force->lambda[i] : 0.0f;
 
-                // Disable the force if it has exceeded its fracture threshold
-                if (fabsf(force->lambda[i]) >= force->fracture[i])
-                    force->disable();
+                    // Update lambda (Eq 11)
+                    // Note that we don't include non-conservative forces (ie motors) in the lambda update, as they are not part of the dual problem.
+                    force->lambda[i] = clamp(force->penalty[i] * force->C[i] + lambda, force->fmin[i], force->fmax[i]);
 
-                // Update the penalty parameter and clamp to material stiffness if we are within the force bounds (Eq. 16)
-                if (force->lambda[i] > force->fmin[i] && force->lambda[i] < force->fmax[i])
-                    force->penalty[i] = min(force->penalty[i] + beta * abs(force->C[i]), min(PENALTY_MAX, force->stiffness[i]));
+                    // Disable the force if it has exceeded its fracture threshold
+                    if (fabsf(force->lambda[i]) >= force->fracture[i])
+                        force->disable();
+
+                    // Update the penalty parameter and clamp to material stiffness if we are within the force bounds (Eq. 16)
+                    if (force->lambda[i] > force->fmin[i] && force->lambda[i] < force->fmax[i])
+                        force->penalty[i] = min(force->penalty[i] + beta * abs(force->C[i]), min(PENALTY_MAX, force->stiffness[i]));
+                }
             }
         }
-    }
 
-    // Compute velocities (BDF1)
-    for (Rigid* body = bodies; body != 0; body = body->next)
-    {
-        body->prevVelocity = body->velocity;
-        if (body->mass > 0)
-            body->velocity = (body->position - body->initial) / dt;
+        // If we are are the final iteration before post stabilization, compute velocities (BDF1)
+        if (it == iterations - 1)
+        {
+            for (Rigid* body = bodies; body != 0; body = body->next)
+            {
+                body->prevVelocity = body->velocity;
+                if (body->mass > 0)
+                    body->velocity = (body->position - body->initial) / dt;
+            }
+        }
     }
 }
 

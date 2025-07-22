@@ -109,9 +109,13 @@ void ui()
     ImGui::SliderFloat("Gravity", &solver->gravity, -20.0f, 20.0f);
     ImGui::SliderFloat("Dt", &solver->dt, 0.001f, 0.1f);
     ImGui::SliderInt("Iterations", &solver->iterations, 1, 50);
-    ImGui::SliderFloat("Alpha", &solver->alpha, 0.0f, 1.0f);
+
+    if (!solver->postStabilize)
+        ImGui::SliderFloat("Alpha", &solver->alpha, 0.0f, 1.0f);
     ImGui::SliderFloat("Beta", &solver->beta, 0.0f, 1000000.0f, "%.f", ImGuiSliderFlags_Logarithmic);
     ImGui::SliderFloat("Gamma", &solver->gamma, 0.0f, 1.0f);
+
+    ImGui::Checkbox("Post Stabilize", &solver->postStabilize);
 
     ImGui::End();
 }
