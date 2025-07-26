@@ -249,7 +249,7 @@ static void sceneMotor(Solver* solver)
 static void sceneFracture(Solver* solver)
 {
     const int N = 10;
-    const int M = 10;
+    const int M = 15;
 
     solver->clear();
     new Rigid(solver, { 100, 0.5f }, 0.0f, 0.5f, { 0.0f, 0.0f });
