@@ -270,6 +270,45 @@ static void sceneFracture(Solver* solver)
         new Rigid(solver, { 2, 1 }, 1.0f, 0.5f, { 0, i * 2.0f + 8.0f, 0 });
 }
 
+static void sceneCards(Solver* solver)
+{
+    solver->clear();
+    new Rigid(solver, { 80.0f, 4.0f }, 0.0f, 0.7f, { 0.0f, -2.0f, 0.0f });
+
+    float cardHeight = 0.2f * 2.0f;
+    float cardThickness = 0.001f * 2.0f;
+
+    float angle0 = 25.0f * 3.14159f / 180.0f;
+    float angle1 = -25.0f * 3.14159f / 180.0f;
+    float angle2 = 0.5f * 3.14159f;
+
+    int Nb = 5;
+    float z0 = 0.0f;
+    float y = cardHeight * 0.5f - 0.02f;
+    while (Nb)
+    {
+        float z = z0;
+        for (int i = 0; i < Nb; i++)
+        {
+            if (i != Nb - 1)
+            {
+                new Rigid(solver, { cardThickness, cardHeight }, 1.0f, 0.7f, { z + 0.25f, y + cardHeight * 0.5f - 0.02f, angle2 });
+            }
+
+            new Rigid(solver, { cardThickness, cardHeight }, 1.0f, 0.7f, { z, y, angle1 });
+
+            z += 0.175f;
+
+            new Rigid(solver, { cardThickness, cardHeight }, 1.0f, 0.7f, { z, y, angle0 });
+
+            z += 0.175f;
+        }
+        y += cardHeight - 0.04f;
+        z0 += 0.175f;
+        Nb--;
+    }
+}
+
 
 static void (*scenes[])(Solver*) =
 {
@@ -278,6 +317,7 @@ static void (*scenes[])(Solver*) =
     sceneDynamicFriction,
     sceneStaticFriction,
     scenePyramid,
+    sceneCards,
     sceneRope,
     sceneHeavyRope,
     sceneHangingRope,
@@ -299,6 +339,7 @@ static const char* sceneNames[] = {
     "Dynamic Friction",
     "Static Friction",
     "Pyramid",
+    "Cards",
     "Rope",
     "Heavy Rope",
     "Hanging Rope",
@@ -314,4 +355,4 @@ static const char* sceneNames[] = {
     "Fracture"
 };
 
-static const int sceneCount = 18;
+static const int sceneCount = 19;

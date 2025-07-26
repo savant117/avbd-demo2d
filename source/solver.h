@@ -26,9 +26,9 @@
 #include "maths.h"
 
 #define MAX_ROWS 4                    // Most number of rows an individual constraint can have
-#define PENALTY_MIN 1000.0f           // Minimum penalty parameter
+#define PENALTY_MIN 1.0f              // Minimum penalty parameter
 #define PENALTY_MAX 1000000000.0f     // Maximum penalty parameter
-#define COLLISION_MARGIN 0.01f        // Margin for collision detection to avoid flickering contacts
+#define COLLISION_MARGIN 0.0005f      // Margin for collision detection to avoid flickering contacts
 #define STICK_THRESH 0.01f            // Position threshold for sticking contacts (ie static friction)
 #define SHOW_CONTACTS true            // Whether to show contacts in the debug draw
 
