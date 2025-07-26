@@ -60,6 +60,7 @@ float2 boxSize = { 1, 1 };
 float2 boxVelocity = { 0, 0 };
 float boxFriction = 0.5f;
 float boxDensity = 1.0f;
+bool paused = false;
 
 void ui()
 {
@@ -96,6 +97,14 @@ void ui()
     ImGui::SameLine();
     if (ImGui::Button("Default"))
         solver->defaultParams();
+
+    ImGui::Checkbox("Pause", &paused);
+    if (paused)
+    {
+        ImGui::SameLine();
+        if (ImGui::Button("Step"))
+            solver->step();
+    }
 
     ImGui::Spacing();
     ImGui::SliderFloat("Box Friction", &boxFriction, 0.0f, 2.0f);
@@ -234,7 +243,8 @@ void mainLoop()
     ui();
 
     // Step solver and draw it
-    solver->step();
+    if (!paused)
+        solver->step();
     solver->draw();
 
     // ImGUI rendering
