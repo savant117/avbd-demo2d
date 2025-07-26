@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <assert.h>
+#include <map>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -38,18 +39,14 @@
 #include "solver.h"
 #include "scenes.h"
 
-typedef int32_t i32;
-typedef uint32_t u32;
-typedef int32_t b32;
-
 #define WinWidth 1280
 #define WinHeight 720
 
-b32 Running = 1;
-b32 FullScreen = 0;
+bool Running = 1;
+bool FullScreen = 0;
 SDL_Window *Window;
 SDL_GLContext Context;
-u32 WindowFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE;
+int WindowFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE;
 
 Solver* solver = new Solver();
 Joint* drag = 0;
@@ -62,14 +59,29 @@ float boxFriction = 0.5f;
 float boxDensity = 1.0f;
 bool paused = false;
 
+bool touchOnly = false;
+std::map<SDL_FingerID, float2> activeFingers;
+float2 prevGestureCenter;
+bool hasPrevGestureCenter = false;
+
 void ui()
 {
     // Draw the ImGui UI
     ImGui::Begin("Controls");
-    ImGui::Text("Move Cam: W,A,S,D / Middle Mouse");
-    ImGui::Text("Zoom Cam: Q,E / Mouse Wheel");
-    ImGui::Text("Make Box: Right Mouse");
-    ImGui::Text("Drag Box: Left Mouse");
+    if (touchOnly)
+    {
+        ImGui::Text("Move Cam: Two-Finger Drag");
+        ImGui::Text("Zoom Cam: Pinch");
+        ImGui::Text("Make Box: Double Tap");
+        ImGui::Text("Drag Box: Tap and Hold");
+    }
+    else
+    {
+        ImGui::Text("Move Cam: W,A,S,D / Middle Mouse");
+        ImGui::Text("Zoom Cam: Q,E / Mouse Wheel");
+        ImGui::Text("Make Box: Right Mouse Button");
+        ImGui::Text("Drag Box: Left Mouse Button");
+    }
 
     ImGui::Spacing();
     ImGui::Separator();
@@ -156,7 +168,7 @@ void input()
         camPos -= float2{ io.MouseDelta.x, -io.MouseDelta.y } / camZoom;
     camZoom *= powf(1.1f, io.MouseWheel);
 
-    // Draw box
+    // Drag box
     if (io.MouseDown[ImGuiMouseButton_Left])
     {
         if (!drag)
@@ -176,7 +188,8 @@ void input()
     }
 
     // Create box
-    if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Right) ||
+        (touchOnly && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)))
     {
         new Rigid(solver, boxSize, boxDensity, boxFriction, float3{ mousePos.x, mousePos.y, 0.0f },
             float3{ boxVelocity.x, boxVelocity.y, 0.0f });
@@ -212,6 +225,57 @@ void mainLoop()
             #ifndef __EMSCRIPTEN__
             Running = 0;
             #endif
+        }
+        else if (event.type == SDL_FINGERDOWN)
+        {
+            int w, h;
+            SDL_GetWindowSize(Window, &w, &h);
+            SDL_FingerID id = event.tfinger.fingerId;
+            float2 pos = { event.tfinger.x * w, event.tfinger.y * h };
+            activeFingers[id] = pos;
+            if (activeFingers.size() != 2)
+            {
+                hasPrevGestureCenter = false;
+            }
+        }
+        else if (event.type == SDL_FINGERUP)
+        {
+            activeFingers.erase(event.tfinger.fingerId);
+            hasPrevGestureCenter = false;
+        }
+        else if (event.type == SDL_MULTIGESTURE)
+        {
+            if (event.mgesture.numFingers == 2)
+            {
+                int w, h;
+                SDL_GetWindowSize(Window, &w, &h);
+                float2 center = { event.mgesture.x * w, event.mgesture.y * h };
+
+                // Handle panning
+                if (hasPrevGestureCenter)
+                {
+                    float2 delta = center - prevGestureCenter;
+                    camPos -= float2{ delta.x, -delta.y } / camZoom;
+                }
+                prevGestureCenter = center;
+                hasPrevGestureCenter = true;
+
+                // Handle zooming (pinch)
+                float dDist = event.mgesture.dDist;
+                if (dDist != 0.0f)
+                {
+                    float zoomFactor = 1.0f + dDist * 2.0f;
+                    if (zoomFactor > 0.01f)
+                    {
+                        float2 screenOffset = float2 { center.x, (float)h - center.y } - float2{ (float)w, (float)h } * 0.5f;
+                        float oldZoom = camZoom;
+                        camZoom *= zoomFactor;
+                        float2 oldScreenOffset = screenOffset / oldZoom;
+                        float2 newScreenOffset = screenOffset / camZoom;
+                        camPos += oldScreenOffset - newScreenOffset;
+                    }
+                }
+            }
         }
     }
 
@@ -263,6 +327,10 @@ int main(int argc, char* argv[])
         return -1;
     }
 
+    #ifdef EMSCRIPTEN
+    touchOnly = (bool)emscripten_run_script_int("window.matchMedia('(pointer:coarse)').matches ? 1 : 0");
+    #endif
+
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);    // Enable multisampling
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
 
@@ -303,8 +371,23 @@ int main(int argc, char* argv[])
     ImGuiIO &io = ImGui::GetIO();
     (void)io;
 
+    // Scale UI higher for mobile devices
+    #ifdef EMSCRIPTEN
+    const float uiScale = touchOnly ? 2.0f : 1.0f;
+    #else
+    const float uiScale = 1.0f;
+    #endif
+
+    ImFontConfig font_config;
+    font_config.SizePixels = 13.0f * uiScale;
+    io.Fonts->AddFontDefault(&font_config);
+
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
+
+    // Scale all style elements
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.ScaleAllSizes(uiScale);
 
     // Setup Platform/Renderer bindings
     ImGui_ImplSDL2_InitForOpenGL(Window, Context);
