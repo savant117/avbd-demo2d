@@ -69,7 +69,7 @@ void Solver::defaultParams()
 
     // Post stabilization applies an extra iteration to fix positional error.
     // This removes the need for the alpha parameter, which can make tuning a little easier.
-    postStabilize = false;
+    postStabilize = true;
 }
 
 void Solver::step()
