@@ -226,17 +226,14 @@ void Solver::step()
                 }
             }
         }
+    }
 
-        // If we are are the final iteration before post stabilization, compute velocities (BDF1)
-        if (it == iterations - 1)
-        {
-            for (Rigid* body = bodies; body != 0; body = body->next)
-            {
-                body->prevVelocity = body->velocity;
-                if (body->mass > 0)
-                    body->velocity = (body->position - body->initial) / dt;
-            }
-        }
+    // Compute velocities (BDF1)
+    for (Rigid* body = bodies; body != 0; body = body->next)
+    {
+        body->prevVelocity = body->velocity;
+        if (body->mass > 0)
+            body->velocity = (body->position - body->initial) / dt;
     }
 }
 
