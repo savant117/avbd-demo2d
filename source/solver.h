@@ -77,7 +77,6 @@ struct Force
     float fmin[MAX_ROWS];
     float fmax[MAX_ROWS];
     float stiffness[MAX_ROWS];
-    float motor[MAX_ROWS];
     float fracture[MAX_ROWS];
     float penalty[MAX_ROWS];
     float lambda[MAX_ROWS];
@@ -94,7 +93,7 @@ struct Force
     virtual void draw() const {}
 };
 
-// Revolute joint + angle constraint between two rigid bodies, with optional motor and fracture
+// Revolute joint + angle constraint between two rigid bodies, with optional fracture
 struct Joint : Force
 {
     float2 rA, rB;
@@ -103,7 +102,7 @@ struct Joint : Force
     float restAngle;
 
     Joint(Solver* solver, Rigid* bodyA, Rigid* bodyB, float2 rA, float2 rB, float3 stiffness = float3{ INFINITY, INFINITY, INFINITY },
-        float motor = 0.0f, float fracture = INFINITY);
+        float fracture = INFINITY);
 
     int rows() const override { return 3; }
 
@@ -140,6 +139,21 @@ struct IgnoreCollision : Force
     bool initialize() override { return true; }
     void computeConstraint(float alpha) override {}
     void computeDerivatives(Rigid* body) override {}
+    void draw() const override {}
+};
+
+// Motor force which applies a torque to two rigid bodies to achieve a desired angular speed
+struct Motor : Force
+{
+    float speed;
+
+    Motor(Solver* solver, Rigid* bodyA, Rigid* bodyB, float speed, float maxTorque);
+
+    int rows() const override { return 1; }
+
+    bool initialize() override { return true; }
+    void computeConstraint(float alpha) override;
+    void computeDerivatives(Rigid* body) override;
     void draw() const override {}
 };
 

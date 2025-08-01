@@ -241,9 +241,8 @@ static void sceneMotor(Solver* solver)
     new Rigid(solver, { 100, 0.5f }, 0.0f, 0.5f, { 0.0f, -10.0f });
 
     Rigid* a0 = new Rigid(solver, { 5, 0.5f }, 1.0f, 0.5f, { 0.0f, 0.0f, 0.0f });
-    Rigid* a1 = new Rigid(solver, { 5, 0.5f }, 1.0f, 0.5f, { 0.0f, 0.0f, 3.14159f / 2.0f });
-    new Joint(solver, a0, a1, { 0, 0 }, { 0, 0 }, { INFINITY, INFINITY, INFINITY });
-    new Joint(solver, 0, a0, { 0, 0 }, { 0, 0 }, { INFINITY, INFINITY, 0.0f }, -25.0f);
+    new Joint(solver, 0, a0, { 0, 0 }, { 0, 0 }, { INFINITY, INFINITY, 0.0f });
+    new Motor(solver, 0, a0, 20.0f, 50.0f);
 }
 
 static void sceneFracture(Solver* solver)
@@ -259,7 +258,7 @@ static void sceneFracture(Solver* solver)
     {
         Rigid* curr = new Rigid(solver, { 1, 0.5f }, 1.0f, 0.5f, { (float)i - N / 2.0f, 6.0f, 0.0f });
         if (prev)
-            new Joint(solver, prev, curr, { 0.5f, 0 }, { -0.5f, 0 }, { INFINITY, INFINITY, INFINITY }, 0.0f, 500.0f);
+            new Joint(solver, prev, curr, { 0.5f, 0 }, { -0.5f, 0 }, { INFINITY, INFINITY, INFINITY }, 500.0f);
         prev = curr;
     }
 

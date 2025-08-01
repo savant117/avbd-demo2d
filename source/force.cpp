@@ -36,7 +36,6 @@ Force::Force(Solver* solver, Rigid* bodyA, Rigid* bodyB)
         J[i] = { 0, 0, 0 };
         H[i] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
         C[i] = 0.0f;
-        motor[i] = 0.0f;
         stiffness[i] = INFINITY;
         fmax[i] = INFINITY;
         fmin[i] = -INFINITY;

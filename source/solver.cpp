@@ -128,7 +128,7 @@ void Solver::step()
     for (Rigid* body = bodies; body != 0; body = body->next)
     {
         // Don't let bodies rotate too fast
-        body->velocity.z = clamp(body->velocity.z, -10.0f, 10.0f);
+        body->velocity.z = clamp(body->velocity.z, -50.0f, 50.0f);
 
         // Compute inertial position (Eq 2)
         body->inertial = body->position + body->velocity * dt;
@@ -182,7 +182,7 @@ void Solver::step()
                     float lambda = isinf(force->stiffness[i]) ? force->lambda[i] : 0.0f;
 
                     // Compute the clamped force magnitude (Sec 3.2)
-                    float f = clamp(force->penalty[i] * force->C[i] + lambda + force->motor[i], force->fmin[i], force->fmax[i]);
+                    float f = clamp(force->penalty[i] * force->C[i] + lambda, force->fmin[i], force->fmax[i]);
 
                     // Compute the diagonally lumped geometric stiffness term (Sec 3.5)
                     float3x3 G = diagonal(length(force->H[i].col(0)), length(force->H[i].col(1)), length(force->H[i].col(2))) * abs(f);
@@ -213,7 +213,6 @@ void Solver::step()
                     float lambda = isinf(force->stiffness[i]) ? force->lambda[i] : 0.0f;
 
                     // Update lambda (Eq 11)
-                    // Note that we don't include non-conservative forces (ie motors) in the lambda update, as they are not part of the dual problem.
                     force->lambda[i] = clamp(force->penalty[i] * force->C[i] + lambda, force->fmin[i], force->fmax[i]);
 
                     // Disable the force if it has exceeded its fracture threshold

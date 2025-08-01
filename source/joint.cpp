@@ -11,13 +11,12 @@
 
 #include "solver.h"
 
-Joint::Joint(Solver* solver, Rigid* bodyA, Rigid* bodyB, float2 rA, float2 rB, float3 stiffness, float motor, float fracture)
+Joint::Joint(Solver* solver, Rigid* bodyA, Rigid* bodyB, float2 rA, float2 rB, float3 stiffness, float fracture)
     : Force(solver, bodyA, bodyB), rA(rA), rB(rB)
 {
     this->stiffness[0] = stiffness.x;
     this->stiffness[1] = stiffness.y;
     this->stiffness[2] = stiffness.z;
-    this->motor[2] = motor;
     this->fmax[2] = fracture;
     this->fmin[2] = -fracture;
     this->fracture[2] = fracture;
